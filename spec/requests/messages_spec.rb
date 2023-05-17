@@ -3,16 +3,23 @@ require 'rails_helper'
 RSpec.describe 'Messages API', type: :request do
   let(:agus) { create(:user) }
   let(:dimas) { create(:user) }
-  let(:dimas_headers) { valid_headers(dimas) }
+  let(:dimas_headers) { valid_headers(dimas.id) }
 
   let(:samid) { create(:user) }
-  let(:samid_headers) { valid_headers(samid) }
+  let(:samid_headers) { valid_headers(samid.id) }
 
-  # TODO: create conversation between Dimas and Agus, then set convo_id variable
+  let(:conversation_data) {create(:conversation, sender: dimas, recipient: agus)}
+  let(:messages_data) {create_list(:conversation_message, 3, conversation: conversation_data, user: conversation_data.sender)}
+  let(:convo_id) {conversation_data.id}
+
 
   describe 'get list of messages' do
     context 'when user have conversation with other user' do
-      before { get "/conversations/#{convo_id}/messages", params: {}, headers: dimas_headers }
+      before { 
+        conversation_data
+        messages_data
+        get "/conversations/#{convo_id}/messages", params: {}, headers: dimas_headers 
+      }
 
       it 'returns list all messages in conversation' do
         expect_response(
@@ -34,7 +41,11 @@ RSpec.describe 'Messages API', type: :request do
 
     context 'when user try to access conversation not belong to him' do
       # TODO: create conversation and set convo_id variable
-      before { get "/conversations/#{convo_id}/messages", params: {}, headers: samid_headers }
+      before {
+        conversation_data
+        messages_data 
+        get "/conversations/#{convo_id}/messages", params: {}, headers: samid_headers 
+      }
 
       it 'returns error 403' do
         expect(response).to have_http_status(403)
@@ -43,7 +54,11 @@ RSpec.describe 'Messages API', type: :request do
 
     context 'when user try to access invalid conversation' do
       # TODO: create conversation and set convo_id variable
-      before { get "/conversations/-11/messages", params: {}, headers: samid_headers }
+      before { 
+        conversation_data
+        messages_data
+        get "/conversations/-11/messages", params: {}, headers: samid_headers 
+      }
 
       it 'returns error 404' do
         expect(response).to have_http_status(404)

@@ -2,10 +2,27 @@ require 'rails_helper'
 
 RSpec.describe 'Conversations API', type: :request do
   let(:dimas) { create(:user) }
-  let(:dimas_headers) { valid_headers(dimas) }
+  let(:dimas_headers) { valid_headers(dimas.id) }
 
   let(:samid) { create(:user) }
-  let(:samid_headers) { valid_headers(samid) }
+  let(:samid_headers) { valid_headers(samid.id) }
+  
+  let(:users) {create_list(:user, 5)}
+
+  let(:conversations_data) do
+    conversations = []
+    users.each do |recipient|
+      conversations << create(:conversation, sender: dimas, recipient: recipient)
+    end
+    conversations
+  end
+
+  let(:convo_id) {conversations_data.first.id}
+  let(:messages_data) do
+    conversations_data.each do |current_conversation|
+      create_list(:conversation_message, 3, conversation: current_conversation, user: current_conversation.sender)
+    end
+  end
 
   describe 'GET /conversations' do
     context 'when user have no conversation' do
@@ -23,7 +40,11 @@ RSpec.describe 'Conversations API', type: :request do
     context 'when user have conversations' do
       # TODOS: Populate database with conversation of current user
 
-      before { get '/conversations', params: {}, headers: dimas_headers }
+      before { 
+        conversations_data
+        messages_data
+        get '/conversations', params: {}, headers: dimas_headers 
+      }
 
       it 'returns list conversations of current user' do
         # Note `response_data` is a custom helper
